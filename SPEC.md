@@ -1,6 +1,6 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.0.1  
+**Spec Version:** 1.0.2  
 **Last Updated:** 2025-04-18
 
 ## 2. Purpose
@@ -92,7 +92,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - Test-driven development (TDD) strictly followed.
 - All new features require corresponding tests before code is written.
 - Tests must pass before code is considered complete.
-- Static analysis (Pyright) and formatting (Black) enforced via pre-commit hooks and CI.
+- Static analysis (Pyright) and style (Ruff) enforced via pre-commit hooks and CI.
 - Continuous Integration (CI) with GitHub Actions for both frontend and backend.
 - Tests ensure DB/filesystem isolation and clean up after themselves.
 - Code is concise, maintainable, and written with skepticism.
@@ -111,8 +111,8 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 
 ## 13. Glossary
 
-| Term     | Definition                                         |
-|----------|----------------------------------------------------|
+| Term     | Definition                                          |
+|----------|-----------------------------------------------------|
 | Photo    | An image record in the database and filesystem      |
 | Caption  | User-supplied text describing a photo               |
 | Hash     | SHA-256 hash of image file, used as unique ID       |
