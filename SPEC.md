@@ -1,6 +1,6 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.0.0  
+**Spec Version:** 1.0.1  
 **Last Updated:** 2025-04-18
 
 ## 2. Purpose
@@ -120,17 +120,24 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 
 ## 14. Example API Usage
 
-**Get photo IDs:**
+### Get photo IDs
+
 Request: `GET /photos?limit=2&offset=0`
+
 Response: `{ "photo_ids": [1, 2] }`
 
-**Get photo metadata:**
+### Get photo metadata
+
 Request: `GET /photos/1`
+
 Response: `{ "id": 1, "hash": "...", "filename": "foo.jpg", "caption": "A dog" }`
 
-**Update caption:**
+### Update caption
+
 Request: `PATCH /photos/1/caption` with `{ "caption": "A better caption" }`
+
 Response: `{ "id": 1, "caption": "A better caption" }`
 
-**Error response:**
+### Error response
+
 Response: `{ "detail": "Photo not found" }` (404)
