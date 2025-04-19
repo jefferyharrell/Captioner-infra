@@ -1,7 +1,19 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.0.3  
+**Spec Version:** 1.0.4  
 **Last Updated:** 2025-04-19
+
+---
+
+**Changelog 1.0.4 (2025-04-19):**
+- DropboxStorage supports pagination for all JPEG/PNG images (recursive, unlimited count)
+- Filtering for JPEG/PNG is done client-side (Dropbox API does not support extension filtering)
+- All DropboxStorage error paths (missing token, API errors, pagination errors) are fully tested and covered
+- PhotoStorage ABC methods now explicitly raise NotImplementedError
+- Test coverage is >95% and enforced in CI
+- Pre-commit hooks (Ruff, Pyright, coverage) are enforced
+- Conventional Commits and git commit message newline rule added to project rules
+
 
 ## 2. Purpose
 Private web app for viewing and captioning photos. FastAPI backend, Next.js frontend, SQLite DB, local image storage.
