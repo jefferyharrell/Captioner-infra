@@ -10,10 +10,10 @@
 - FastAPI backend MVP is in progress; initial endpoints (e.g., `/photos`) and infrastructure are implemented, with more API endpoints to come.
 - 100% type annotations, Black formatting, and Ruff linting enforced.
 - DropboxStorage backend is default, pluggable via env var; all error paths are tested.
-- Backend test coverage is >95% (well above 90% minimum), all lint/type/tests passing and enforced in CI.
+- Backend test coverage is 99%+ (well above 90% minimum), all lint/type/tests passing and enforced in CI.
 - Pre-commit hooks (Ruff, Pyright, YAML, whitespace, coverage, etc.) are enforced locally and in CI.
 - Docker Compose (`Captioner-infra/docker-compose.yml`) injects secrets via environment variables; `.env` is ignored by git and optional for local dev only.
-- Project structure, SPEC.md (v1.0.4), and STATUS.md are fully in sync.
+- Project structure, SPEC.md (v1.0.4), and STATUS.md are fully in sync. Photo model now uses object_key (not hash or filename) as the canonical identifier, matching backend, API, and storage abstraction.
 - Configuration is via environment variables only; no secrets in code or version control.
 - Project rules require Conventional Commits and prohibit newlines in git commit messages.
 - Test-driven development (TDD) is strictly followed.
