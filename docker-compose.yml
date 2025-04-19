@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../Captioner-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../Captioner-backend/app:/app/app  # For live code reloading during development
+    # environment:
+    #   - EXAMPLE_VAR=value
+
+# When you build the frontend server, you can add it here as another service.
+# For example:
+#  frontend:
+#    build:
+#      context: ../Captioner-frontend
+#    ports:
+#      - "3000:3000"
+#    depends_on:
+#      - backend
