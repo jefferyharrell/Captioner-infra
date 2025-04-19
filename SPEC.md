@@ -14,7 +14,18 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - **Testing:** Pytest (backend), Jest/React Testing Library, Playwright (frontend)
 - **OS:** macOS, Linux
 
-## 4. Backend API Endpoints
+## 4. Backend Photo Storage Abstraction
+- The backend implements a photo storage abstraction layer with two core functions:
+    - `list_photos`: List all available photo objects (IDs, metadata, etc.).
+    - `get_photo`: Retrieve a specific photo (by ID or hash).
+- The storage backend is pluggable. Supported implementations:
+    - **Dropbox** (default): Uses Dropbox HTTP API for photo storage/retrieval.
+    - **Filesystem**: Reads photos from a local directory.
+    - **Amazon S3**: Uses S3 HTTP API for photo storage/retrieval.
+- The abstraction allows for easy switching or extension to new storage providers in the future.
+- All implementations must conform to the same interface and support the required operations efficiently.
+
+## 5. Backend API Endpoints
 
 | Method | Path                        | Purpose                  | Request Example                  | Response Example                |
 |--------|-----------------------------|--------------------------|----------------------------------|---------------------------------|
@@ -30,7 +41,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - `limit` (integer): Default 100, min 1, max 1000
 - `offset` (integer): Default 0, min 0
 
-## 5. Data Model
+## 6. Data Model
 
 | Field     | Type     | Constraints                 | Description                   |
 |-----------|----------|----------------------------|-------------------------------|
@@ -39,7 +50,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | filename  | string   |                            | Original filename             |
 | caption   | text     | nullable                   | User-supplied caption         |
 
-## 6. Error Codes
+## 7. Error Codes
 
 | Status | Meaning         | Example Scenario                                |
 |--------|----------------|-------------------------------------------------|
@@ -51,7 +62,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | 422    | Unprocessable  | Semantically invalid (e.g., bad caption)        |
 | 500    | Server Error   | Unexpected backend/server error                 |
 
-## 7. Frontend Features
+## 8. Frontend Features
 
 - Single-photo random UX; displays one random photo at a time.
 - Editable caption field below image; saves edits in real time (debounced).
@@ -61,7 +72,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - Basic accessibility: alt text is caption > filename > blank.
 - No upload/delete UI; images identified by SHA-256 hash.
 
-## 8. Project Structure
+## 9. Project Structure
 
 - `/backend/app/` – FastAPI app and models
 - `/backend/images/` – Original images
@@ -72,7 +83,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - `/frontend/public/` – Static files
 - `/frontend/package.json` – Frontend dependencies
 
-## 9. Configuration & Environment Variables
+## 10. Configuration & Environment Variables
 
 | Variable                | Purpose                        | Type    | Required | Example Value           |
 |-------------------------|--------------------------------|---------|----------|------------------------|
@@ -87,7 +98,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - Production: use Docker secrets or cloud secret manager.
 - Env vars loaded at container start, not build time.
 
-## 10. Development Practices
+## 11. Development Practices
 
 - Test-driven development (TDD) strictly followed.
 - All new features require corresponding tests before code is written.
@@ -97,19 +108,19 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - Tests ensure DB/filesystem isolation and clean up after themselves.
 - Code is concise, maintainable, and written with skepticism.
 
-## 11. Known Gaps / TODOs (Post-MVP)
+## 12. Known Gaps / TODOs (Post-MVP)
 
 - Search functionality (by caption, filename, or metadata)
 - ML-based auto-captioning or caption suggestions
 
-## 12. Non-Goals / Out of Scope
+## 13. Non-Goals / Out of Scope
 
 - No user accounts or authentication beyond simple password
 - No image manipulation or editing
 - No gallery/grid view
 - No upload/delete UI in MVP
 
-## 13. Glossary
+## 14. Glossary
 
 | Term     | Definition                                          |
 |----------|-----------------------------------------------------|
@@ -118,7 +129,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | Hash     | SHA-256 hash of image file, used as unique ID       |
 | LRU      | Least Recently Used cache for thumbnails            |
 
-## 14. Example API Usage
+## 15. Example API Usage
 
 ### Get photo IDs
 
