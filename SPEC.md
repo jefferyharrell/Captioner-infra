@@ -1,7 +1,7 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.0.2  
-**Last Updated:** 2025-04-18
+**Spec Version:** 1.0.3  
+**Last Updated:** 2025-04-19
 
 ## 2. Purpose
 Private web app for viewing and captioning photos. FastAPI backend, Next.js frontend, SQLite DB, local image storage.
@@ -9,7 +9,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 ## 3. Architecture
 - **Frontend:** Next.js 14 (TypeScript), Tailwind v4, shadcn/ui
 - **Backend:** FastAPI (Python 3), SQLite, SQLAlchemy ORM
-- **Image Storage:** Filesystem (backend)
+- **Image Storage:** Pluggable storage backend via environment variable, default: Dropbox via HTTP API
 - **Supported Formats:** JPEG, PNG, WEBP (others rejected)
 - **Testing:** Pytest (backend), Jest/React Testing Library, Playwright (frontend)
 - **OS:** macOS, Linux
@@ -91,6 +91,11 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | THUMBNAIL_CACHE_SIZE_MB | LRU thumbnail cache size (MB)  | int     | No       | 128                    |
 | FRONTEND_API_KEY        | Shared secret for API          | string  | No       | abc123                 |
 | DATABASE_URL            | DB connection string           | string  | No       | sqlite:///photos.db    |
+| STORAGE_BACKEND         | Photo storage backend (dropbox|filesystem|s3), default: dropbox | string  | No       | dropbox                |
+| DROPBOX_TOKEN           | Access token for Dropbox API                   | string  | No       |                        |
+| S3_BUCKET               | AWS S3 bucket name                             | string  | No       |                        |
+| AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication        | string  | No       |                        |
+| AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication    | string  | No       |                        |
 
 - All configuration via environment variables.
 - Local: use `.env` (not in git); reference with `docker-compose` (`env_file:`) or `docker run --env-file`.
