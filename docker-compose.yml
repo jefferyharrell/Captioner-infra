@@ -2,13 +2,19 @@ services:
   backend:
     build:
       context: ../Captioner-backend
+    environment:
+      - DROPBOX_TOKEN=${DROPBOX_TOKEN}
+      - DROPBOX_ROOT_PATH=${DROPBOX_ROOT_PATH}
     ports:
       - "8000:8000"
     volumes:
       - ../Captioner-backend/app:/app/app  # For live code reloading during development
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    env_file:
-      - ../Captioner-backend/.env
+    # For local development, you can use an env_file to load secrets from .env.
+    # For production, inject secrets via orchestrator/CI/CD, not .env or env_file.
+    # To enable .env loading in dev, place your .env in the infra directory and uncomment below:
+    # env_file:
+    #   - .env
     # environment:
     #   - EXAMPLE_VAR=value
 
