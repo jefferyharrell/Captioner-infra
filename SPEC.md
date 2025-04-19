@@ -57,9 +57,8 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 
 | Field     | Type     | Constraints                 | Description                   |
 |-----------|----------|----------------------------|-------------------------------|
-| id        | integer  | PK, auto-increment         | Unique photo ID               |
-| hash      | string   | SHA-256, unique, indexed   | Used for deduplication        |
-| filename  | string   |                            | Original filename             |
+| id         | integer  | PK, auto-increment         | Unique photo ID               |
+| object_key| string   | unicode, unique, indexed   | Storage path or S3 object key |
 | caption   | text     | nullable                   | User-supplied caption         |
 
 ## 7. Error Codes
@@ -82,7 +81,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - No rescan button in UI.
 - Responsive design; works on all modern browsers.
 - Basic accessibility: alt text is caption > filename > blank.
-- No upload/delete UI; images identified by SHA-256 hash.
+- No upload/delete UI; images are identified by database id and object_key.
 
 ## 9. Project Structure
 
@@ -143,7 +142,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 |----------|-----------------------------------------------------|
 | Photo    | An image record in the database and filesystem      |
 | Caption  | User-supplied text describing a photo               |
-| Hash     | SHA-256 hash of image file, used as unique ID       |
+| Object Key | Unicode storage path (Dropbox) or S3 object key      |
 | LRU      | Least Recently Used cache for thumbnails            |
 
 ## 15. Example API Usage
@@ -158,7 +157,7 @@ Response: `{ "photo_ids": [1, 2] }`
 
 Request: `GET /photos/1`
 
-Response: `{ "id": 1, "hash": "...", "filename": "foo.jpg", "caption": "A dog" }`
+Response: `{ "id": 1, "object_key": "photos/foo.jpg", "caption": "A dog" }`
 
 ### Update caption
 
