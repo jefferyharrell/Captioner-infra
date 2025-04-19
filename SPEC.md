@@ -46,8 +46,20 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | GET    | /photos/{id}                | Get photo metadata       |                                  | `{ "id": 1, ... }`              |
 | PATCH  | /photos/{id}/caption        | Update photo caption     | `{ "caption": "Nice" }`         | `{ "id": 1, "caption": "Nice"}` |
 | GET    | /photos/{id}/image          | Get image file           |                                  | (binary image)                  |
-| POST   | /rescan                     | Rescan image folder      |                                  | `{ "status": "ok" }`            |
+| POST   | /rescan                     | Discover and sync photos from storage |                                  | `{ "status": "ok" }`            |
 | GET    | /photos/shuffled?limit=100  | Get shuffled photo IDs   |                                  | `{ "photo_ids": [3,1,2] }`      |
+
+### /rescan – Image Discovery Endpoint
+
+- **Purpose:** Walks the configured photo store (Dropbox, S3, or filesystem) and ensures every image file has a corresponding record in the database. If a photo exists in storage but not in the database, a new record is created. No records are deleted or modified for missing files.
+- **When to use:** Call this endpoint after adding images directly to storage (e.g., Dropbox folder, S3 bucket, or local directory) outside of the app.
+- **Request:** `POST /rescan`
+- **Response:** `{ "status": "ok", "num_new_photos": 3 }`
+  (where `num_new_photos` is the number of new records created)
+- **Notes:**
+  - Only supported image formats (JPEG, PNG, WEBP) are discovered.
+  - Does not delete or modify existing database records for missing files.
+  - May be a long-running operation for large stores.
 
 **Parameter Constraints:**
 - `limit` (integer): Default 100, min 1, max 1000
