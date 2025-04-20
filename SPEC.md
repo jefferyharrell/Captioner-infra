@@ -1,9 +1,12 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.2.0  
+**Spec Version:** 1.2.1  
 **Last Updated:** 2025-04-20
 
 ---
+
+**Changelog 1.2.1 (2025-04-20):**
+- Dropbox is now the only required storage backend for MVP. S3 and filesystem storage are post-MVP features and may never be implemented. All references to S3 and filesystem as MVP requirements have been removed or clarified.
 
 **Changelog 1.2.0 (2025-04-20):**
 - Backend now implements JWT-based authentication for login and protected endpoints.
@@ -34,7 +37,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 ## 3. Architecture
 - **Frontend:** Next.js 14 (TypeScript), Tailwind v4, shadcn/ui
 - **Backend:** FastAPI (Python 3), SQLite, SQLAlchemy ORM
-- **Image Storage:** Pluggable storage backend via environment variable, default: Dropbox via HTTP API
+- **Image Storage:** Dropbox via HTTP API (OAuth 2.0 refresh token flow) is the only required backend for MVP. S3 and filesystem backends are post-MVP and may never be implemented.
 - **Supported Formats:** JPEG, PNG, WEBP (others rejected)
 - **Testing:** Pytest (backend), Jest/React Testing Library, Playwright (frontend)
 - **OS:** macOS, Linux
@@ -43,14 +46,13 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - The backend implements a photo storage abstraction layer with two core functions:
     - `list_photos`: List all available photo objects (IDs, metadata, etc.).
     - `get_photo`: Retrieve a specific photo (by ID or hash).
-- The storage backend is pluggable. Supported implementations:
-    - **Dropbox** (default): Uses Dropbox HTTP API for photo storage/retrieval.
+- The storage backend for MVP is Dropbox only. S3 and filesystem backends are post-MVP features and may never be implemented.
+    - **Dropbox** (required for MVP): Uses Dropbox HTTP API for photo storage/retrieval.
         - Authenticates via OAuth 2.0: requires `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and `DROPBOX_REFRESH_TOKEN`.
         - Backend dynamically obtains short-lived access tokens using the refresh token and app credentials.
         - Static `DROPBOX_TOKEN` is no longer used at runtime (may be present for legacy/manual testing only).
         - Access tokens are stored in memory only and never written to disk.
-    - **Filesystem**: Reads photos from a local directory.
-    - **Amazon S3**: Uses S3 HTTP API for photo storage/retrieval.
+    - **Filesystem** and **Amazon S3**: Post-MVP features (not implemented for MVP, may never be implemented).
 - The abstraction allows for easy switching or extension to new storage providers in the future.
 - All implementations must conform to the same interface and support the required operations efficiently.
 
@@ -133,17 +135,17 @@ All protected endpoints require `Authorization: Bearer <token>` in the header.
 | THUMBNAIL_CACHE_SIZE_MB | LRU thumbnail cache size (MB)  | int     | No       | 128                    |
 | FRONTEND_API_KEY        | Shared secret for API          | string  | No       | abc123                 |
 | DATABASE_URL            | DB connection string           | string  | No       | sqlite:///photos.db    |
-| STORAGE_BACKEND         | Photo storage backend (dropbox|filesystem|s3), default: dropbox | string  | No       | dropbox                |
-| DROPBOX_APP_KEY         | Dropbox API app key (OAuth 2.0)                | string  | Yes*     | your_app_key           |
-| DROPBOX_APP_SECRET      | Dropbox API app secret (OAuth 2.0)             | string  | Yes*     | your_app_secret        |
-| DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token                | string  | Yes*     | your_refresh_token     |
+| STORAGE_BACKEND         | Photo storage backend (dropbox only for MVP)   | string  | No       | dropbox                |
+| DROPBOX_APP_KEY         | Dropbox API app key (OAuth 2.0)                | string  | Yes      | your_app_key           |
+| DROPBOX_APP_SECRET      | Dropbox API app secret (OAuth 2.0)             | string  | Yes      | your_app_secret        |
+| DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token                | string  | Yes      | your_refresh_token     |
 | DROPBOX_TOKEN           | (Deprecated) Access token for Dropbox API      | string  | No       |                        |
-| S3_BUCKET               | AWS S3 bucket name                             | string  | No       |                        |
-| AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication        | string  | No       |                        |
-| AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication    | string  | No       |                        |
+| S3_BUCKET               | AWS S3 bucket name (post-MVP only)             | string  | No       |                        |
+| AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication (post-MVP only) | string  | No       |                        |
+| AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication (post-MVP only) | string  | No       |                        |
 | JWT_SECRET_KEY          | Secret key for signing/verifying JWT tokens         | string  | Yes      | (long random string)         |
 
-*Required for Dropbox backend only. Not required for filesystem or S3.
+*Required for Dropbox backend (the only MVP backend). S3 and filesystem are post-MVP only.
 
 - Dropbox backend uses OAuth 2.0: the backend exchanges the refresh token, app key, and app secret for a short-lived access token at runtime. Access tokens are never stored on disk or in the environment file.
 - All configuration via environment variables.
