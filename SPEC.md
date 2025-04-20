@@ -1,9 +1,16 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.1.0  
-**Last Updated:** 2025-04-19
+**Spec Version:** 1.2.0  
+**Last Updated:** 2025-04-20
 
 ---
+
+**Changelog 1.2.0 (2025-04-20):**
+- Backend now implements JWT-based authentication for login and protected endpoints.
+- /login returns a JWT access token on success.
+- All protected endpoints require a valid bearer JWT.
+- JWT_SECRET_KEY is required in the environment and enforced at startup.
+- Full TDD, type, and lint coverage for authentication code.
 
 **Changelog 1.1.0 (2025-04-19):**
 - DropboxStorage now uses OAuth 2.0 with refresh token flow for authentication.
@@ -51,13 +58,15 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 
 | Method | Path                        | Purpose                  | Request Example                  | Response Example                |
 |--------|-----------------------------|--------------------------|----------------------------------|---------------------------------|
-| POST   | /login                      | Authenticate user        | `{ "password": "..." }`         | `{ "success": true }`           |
+| POST   | /login                      | Authenticate user        | `{ "password": "..." }`         | `{ "access_token": "<jwt>", "token_type": "bearer" }`           |
 | GET    | /photos?limit=100&offset=0  | List photo IDs           |                                  | `{ "photo_ids": [1,2,3] }`      |
 | GET    | /photos/{id}                | Get photo metadata       |                                  | `{ "id": 1, ... }`              |
 | PATCH  | /photos/{id}/caption        | Update photo caption     | `{ "caption": "Nice" }`         | `{ "id": 1, "caption": "Nice"}` |
 | GET    | /photos/{id}/image          | Get image file           |                                  | (binary image)                  |
 | POST   | /rescan                     | Discover and sync photos from storage |                                  | `{ "status": "ok" }`            |
 | GET    | /photos/shuffled?limit=100  | Get shuffled photo IDs   |                                  | `{ "photo_ids": [3,1,2] }`      |
+
+All protected endpoints require `Authorization: Bearer <token>` in the header.
 
 ### /rescan – Image Discovery Endpoint
 
@@ -132,6 +141,7 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | S3_BUCKET               | AWS S3 bucket name                             | string  | No       |                        |
 | AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication        | string  | No       |                        |
 | AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication    | string  | No       |                        |
+| JWT_SECRET_KEY          | Secret key for signing/verifying JWT tokens         | string  | Yes      | (long random string)         |
 
 *Required for Dropbox backend only. Not required for filesystem or S3.
 
@@ -141,6 +151,14 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 - Never hardcode secrets in Dockerfiles; inject at runtime.
 - Production: use Docker secrets or cloud secret manager.
 - Env vars loaded at container start, not build time.
+
+## Authentication Model
+
+- Users authenticate via POST /login with the backend password.
+- On success, the backend returns a JWT access token.
+- All protected endpoints require the token in the Authorization header as a Bearer token.
+- The JWT is signed with JWT_SECRET_KEY, which must be set in the environment.
+- Tokens are validated on every protected request.
 
 ## 11. Development Practices
 

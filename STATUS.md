@@ -1,6 +1,6 @@
 # Project Status – Captioner Infrastructure & Backend
 
-**Last updated:** 2025-04-20 08:21 PDT
+**Last updated:** 2025-04-20 12:09 PDT
 
 **PR #4 in progress:** Refactor backend to split API logic into dedicated routers, modernize dependency injection, enforce strict typing, and improve testability. See [PR #4](https://github.com/jefferyharrell/Captioner-backend/pull/4) for details.
 
@@ -16,6 +16,11 @@
     - Requires `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and `DROPBOX_REFRESH_TOKEN` as environment variables.
     - Static `DROPBOX_TOKEN` is deprecated for runtime use; backend dynamically obtains short-lived access tokens using the refresh token.
     - Access tokens are never stored on disk or in the environment file.
+- Backend now implements JWT-based authentication:
+    - `/login` returns a JWT access token on success.
+    - All protected endpoints require a valid bearer JWT in the Authorization header.
+    - `JWT_SECRET_KEY` is required in the environment and enforced at startup.
+    - Full TDD, type, and lint coverage for authentication code.
 - **[In Progress]** Dropbox OAuth refresh token TDD/test coverage is being expanded and improved (branch: `feat/dropbox-oauth-refresh-token`).
 - Backend test coverage is 91%+ (well above 90% minimum), all lint/type/tests passing and enforced in CI. All code is Ruff, Pyright, and pytest clean as of PR #4.
 - Pre-commit hooks (Ruff, Pyright, YAML, whitespace, coverage, etc.) are enforced locally and in CI.
@@ -47,7 +52,6 @@
 
 - Search and ML auto-captioning are out of MVP scope.
 - No gallery/grid or upload/delete UI in backend.
-- User accounts and authentication not yet implemented.
 
 ---
 
