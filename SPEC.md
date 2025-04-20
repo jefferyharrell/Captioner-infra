@@ -1,9 +1,15 @@
 # 1. Captioner – Project Spec (LLM-Optimized, Tabular)
 
-**Spec Version:** 1.0.4  
+**Spec Version:** 1.1.0  
 **Last Updated:** 2025-04-19
 
 ---
+
+**Changelog 1.1.0 (2025-04-19):**
+- DropboxStorage now uses OAuth 2.0 with refresh token flow for authentication.
+- Static DROPBOX_TOKEN is deprecated for runtime use; backend now requires DROPBOX_APP_KEY, DROPBOX_APP_SECRET, and DROPBOX_REFRESH_TOKEN.
+- Backend dynamically obtains short-lived access tokens using the refresh token; access tokens are never stored on disk.
+- Spec and config updated to reflect new Dropbox authentication model.
 
 **Changelog 1.0.4 (2025-04-19):**
 - DropboxStorage supports pagination for all JPEG/PNG images (recursive, unlimited count)
@@ -32,6 +38,10 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
     - `get_photo`: Retrieve a specific photo (by ID or hash).
 - The storage backend is pluggable. Supported implementations:
     - **Dropbox** (default): Uses Dropbox HTTP API for photo storage/retrieval.
+        - Authenticates via OAuth 2.0: requires `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and `DROPBOX_REFRESH_TOKEN`.
+        - Backend dynamically obtains short-lived access tokens using the refresh token and app credentials.
+        - Static `DROPBOX_TOKEN` is no longer used at runtime (may be present for legacy/manual testing only).
+        - Access tokens are stored in memory only and never written to disk.
     - **Filesystem**: Reads photos from a local directory.
     - **Amazon S3**: Uses S3 HTTP API for photo storage/retrieval.
 - The abstraction allows for easy switching or extension to new storage providers in the future.
@@ -115,11 +125,17 @@ Private web app for viewing and captioning photos. FastAPI backend, Next.js fron
 | FRONTEND_API_KEY        | Shared secret for API          | string  | No       | abc123                 |
 | DATABASE_URL            | DB connection string           | string  | No       | sqlite:///photos.db    |
 | STORAGE_BACKEND         | Photo storage backend (dropbox|filesystem|s3), default: dropbox | string  | No       | dropbox                |
-| DROPBOX_TOKEN           | Access token for Dropbox API                   | string  | No       |                        |
+| DROPBOX_APP_KEY         | Dropbox API app key (OAuth 2.0)                | string  | Yes*     | your_app_key           |
+| DROPBOX_APP_SECRET      | Dropbox API app secret (OAuth 2.0)             | string  | Yes*     | your_app_secret        |
+| DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token                | string  | Yes*     | your_refresh_token     |
+| DROPBOX_TOKEN           | (Deprecated) Access token for Dropbox API      | string  | No       |                        |
 | S3_BUCKET               | AWS S3 bucket name                             | string  | No       |                        |
 | AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication        | string  | No       |                        |
 | AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication    | string  | No       |                        |
 
+*Required for Dropbox backend only. Not required for filesystem or S3.
+
+- Dropbox backend uses OAuth 2.0: the backend exchanges the refresh token, app key, and app secret for a short-lived access token at runtime. Access tokens are never stored on disk or in the environment file.
 - All configuration via environment variables.
 - Local: use `.env` (not in git); reference with `docker-compose` (`env_file:`) or `docker run --env-file`.
 - Never hardcode secrets in Dockerfiles; inject at runtime.
