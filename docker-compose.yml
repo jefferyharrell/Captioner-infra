@@ -3,20 +3,19 @@ services:
     build:
       context: ../Captioner-backend
     environment:
-      - DROPBOX_TOKEN=${DROPBOX_TOKEN}
-      - DROPBOX_ROOT_PATH=${DROPBOX_ROOT_PATH}
+      DROPBOX_APP_KEY: "${DROPBOX_APP_KEY}"  # no default, fail if unset
+      DROPBOX_APP_SECRET: "${DROPBOX_APP_SECRET}"
+      DROPBOX_REFRESH_TOKEN: "${DROPBOX_REFRESH_TOKEN}"
+      DROPBOX_ROOT_PATH: "${DROPBOX_ROOT_PATH}"
     ports:
       - "8000:8000"
     volumes:
-      - ../Captioner-backend/app:/app/app  # For live code reloading during development
+      - ../Captioner-backend/app:/app/app  # live code reload
+    restart: on-failure  # restart container on failure
+    working_dir: /app  # set working directory for uvicorn
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    # For local development, you can use an env_file to load secrets from .env.
-    # For production, inject secrets via orchestrator/CI/CD, not .env or env_file.
-    # To enable .env loading in dev, place your .env in the infra directory and uncomment below:
-    # env_file:
-    #   - .env
-    # environment:
-    #   - EXAMPLE_VAR=value
+    # For local development inject env vars via .env or IDE run configs; no env_file in compose
+    # For production, inject via orchestrator or CI/CD
 
 # When you build the frontend server, you can add it here as another service.
 # For example:
