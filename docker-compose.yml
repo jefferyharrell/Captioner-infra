@@ -3,10 +3,12 @@ services:
     build:
       context: ../Captioner-backend
     environment:
+      BACKEND_PASSWORD: "${BACKEND_PASSWORD}"
       DROPBOX_APP_KEY: "${DROPBOX_APP_KEY}"  # no default, fail if unset
       DROPBOX_APP_SECRET: "${DROPBOX_APP_SECRET}"
       DROPBOX_REFRESH_TOKEN: "${DROPBOX_REFRESH_TOKEN}"
       DROPBOX_ROOT_PATH: "${DROPBOX_ROOT_PATH}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
     ports:
       - "8000:8000"
     volumes:
