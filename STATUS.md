@@ -1,6 +1,6 @@
 # Project Status – Captioner Infrastructure & Backend
 
-**Last updated:** 2025-04-19 18:19 PDT
+**Last updated:** 2025-04-20 06:27 PDT
 
 ## Project State
 
@@ -17,6 +17,7 @@
 - **[In Progress]** Dropbox OAuth refresh token TDD/test coverage is being expanded and improved (branch: `feat/dropbox-oauth-refresh-token`).
 - Backend test coverage is 99%+ (well above 90% minimum), all lint/type/tests passing and enforced in CI.
 - Pre-commit hooks (Ruff, Pyright, YAML, whitespace, coverage, etc.) are enforced locally and in CI.
+- All Dropbox OAuth-only changes, infra, and test cleanup from PR #1 are complete and merged as of 2025-04-20.
 - Docker Compose (`Captioner-infra/docker-compose.yml`) injects secrets via environment variables; `.env` is ignored by git and optional for local dev only.
 - Project structure, SPEC.md (v1.0.4), and STATUS.md are fully in sync. `/photos` endpoint now returns a list of database row IDs (primary keys), not storage keys or filenames. Photo model uses `object_key` as the canonical storage identifier, matching backend, API, and storage abstraction.
 - Configuration is via environment variables only; no secrets in code or version control. See `.env.example` for updated variable list.
