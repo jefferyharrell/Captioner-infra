@@ -1,6 +1,6 @@
 # Project Status – Captioner Infrastructure & Backend
 
-**Last updated:** 2025-04-19 17:34 PDT
+**Last updated:** 2025-04-19 18:19 PDT
 
 ## Project State
 
@@ -14,6 +14,7 @@
     - Requires `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and `DROPBOX_REFRESH_TOKEN` as environment variables.
     - Static `DROPBOX_TOKEN` is deprecated for runtime use; backend dynamically obtains short-lived access tokens using the refresh token.
     - Access tokens are never stored on disk or in the environment file.
+- **[In Progress]** Dropbox OAuth refresh token TDD/test coverage is being expanded and improved (branch: `feat/dropbox-oauth-refresh-token`).
 - Backend test coverage is 99%+ (well above 90% minimum), all lint/type/tests passing and enforced in CI.
 - Pre-commit hooks (Ruff, Pyright, YAML, whitespace, coverage, etc.) are enforced locally and in CI.
 - Docker Compose (`Captioner-infra/docker-compose.yml`) injects secrets via environment variables; `.env` is ignored by git and optional for local dev only.
@@ -34,6 +35,7 @@
 ## Next Steps
 
 - Implement `GET /photos/{id}` endpoint for photo metadata.
+- Expand and finalize Dropbox OAuth refresh token test coverage (feat/dropbox-oauth-refresh-token).
 - Begin frontend integration (once backend endpoints are finalized).
 - Expand documentation as new features are added.
 
