@@ -17,8 +17,8 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 
 ## 1. Purpose
 - Captioner is a web application for viewing and captioning photos.
-- The backend MUST store images ("blobs") and associated metadata ("captions").
-- The storage mechanism for captions is backend-dependent (see Section 3) and MUST be implemented according to the backend in use.
+- The backend MUST store images ("blobs") and associated metadata fields (currently "description").
+- The storage mechanism for descriptions is backend-dependent (see Section 3).
 
 ## 2. MVP Scope
 - Only the Dropbox backend is REQUIRED for MVP.
@@ -28,18 +28,18 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 ## 3. Storage Abstraction
 - The backend MUST expose a storage abstraction with the following interface:
   - `list_photos() -> list[int]`: MUST list all available photo object IDs
-  - `get_photo(photo_id: int) -> Photo`: MUST retrieve a specific photo (by ID or hash), including caption
-  - `set_caption(photo_id: int, caption: str) -> Photo`: MUST update a photo's caption
+  - `get_photo(photo_id: int) -> Photo`: MUST retrieve a specific photo (by ID or hash), including description
+  - `set_metadata(photo_id: int, metadata: dict) -> Photo`: MUST update a photo's metadata fields. The `metadata` argument MUST be a JSON object. For MVP, this object will only contain `{"description": "..."}`, but the interface is designed for future extensibility (e.g., additional fields such as tags, author, etc.). The returned `Photo` object MUST reflect the updated metadata.
 - **Backend-specific behavior:**
   - **Dropbox backend:**
     - Blobs MUST be stored in Dropbox
-    - Captions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
   - **S3 backend (future):**
     - Blobs MUST be stored in S3
-    - Captions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
   - **Filesystem backend (future):**
     - Blobs MUST be stored in local filesystem
-    - Captions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
 - The API and abstraction MUST be unified; implementation MAY vary by backend.
 
 ## 4. API Endpoints
@@ -47,20 +47,22 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 |--------|-----------------------------|--------------------------|----------------------------------|---------------------------------|
 | POST   | /login                      | Authenticate user        | `{ "password": "hunter2" }`         | `{ "access_token": "<jwt>", "token_type": "bearer" }`           |
 | GET    | /photos?limit=100&offset=0  | List photo IDs           |                                  | `{ "photo_ids": [1,2,3] }`      |
-| GET    | /photos/{id}                | Get photo metadata       |                                  | `{ "id": 1, ... }`              |
-| PATCH  | /photos/{id}/caption        | Update photo caption     | `{ "caption": "Nice" }`         | `{ "id": 1, "caption": "Nice"}` |
+| GET    | /photos/{id}                | Get photo data and all metadata fields |                                  | `{ "id": 1, "object_key": "photos/foo.jpg", "description": "A dog" }`              |
+| PATCH  | /photos/{id}/metadata    | Update photo metadata (currently only `description`) | `{ "description": "Nice" }`         | `{ "id": 1, "description": "Nice"}` |
 | GET    | /photos/{id}/image          | Get image file           |                                  | (binary image)                  |
 | POST   | /rescan                     | Discover and sync photos from storage |                                  | `{ "status": "ok" }`            |
 
 - All protected endpoints MUST require `Authorization: Bearer <token>` in the header.
-- The `/photos/{id}` and `/photos/{id}/caption` endpoints MUST use XMP metadata in the dc:description field of the image file for all backends.
+- The `/photos/{id}` and `/photos/{id}/metadata` endpoints MUST use XMP metadata in the dc:description field of the image file for all backends.
 
 ## 5. Data Model
 | Field      | Type     | Description                                           |
 |------------|----------|-------------------------------------------------------|
 | id         | integer  | Unique photo ID (DB PK, auto-increment)               |
 | object_key | string   | Storage path or object key (Dropbox path or S3 key)   |
-| caption    | string   | User-supplied caption (stored as XMP metadata in the dc:description field; see Section 3)     |
+| description    | string   | User-supplied description (stored as XMP metadata in the dc:description field; see Section 3)     |
+
+> **Note:** The GET `/photos/{id}` endpoint returns both photo data and all metadata fields as a single JSON object. Additional metadata fields MAY be supported in the future.
 
 ## 6. Configuration (Environment Variables)
 | Variable                | Purpose                        | Type    | Required | Example Value           |
@@ -83,7 +85,7 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 | 403    | Forbidden      | Authenticated but not allowed                   |
 | 404    | Not Found      | Resource does not exist (e.g., photo ID)        |
 | 409    | Conflict       | Duplicate resource (e.g., same photo hash)      |
-| 422    | Unprocessable  | Semantically invalid (e.g., bad caption)        |
+| 422    | Unprocessable  | Semantically invalid (e.g., bad description)        |
 | 500    | Server Error   | Unexpected backend/server error                 |
 
 ## 8. Development Practices
@@ -95,25 +97,25 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 
 ## 9. Roadmap / Extensibility
 - S3 and filesystem backends MAY be implemented in the future.
-- S3/filesystem backends MUST use XMP metadata in the dc:description field for captions/metadata.
+- S3/filesystem backends MUST use XMP metadata in the dc:description field for descriptions/metadata.
 - The API/abstraction MUST remain unified regardless of backend.
 
 ## 10. Glossary
 | Term        | Definition                                                        |
 |-------------|-------------------------------------------------------------------|
 | Photo       | An image record (blob + metadata)                                 |
-| Caption     | User-supplied text describing a photo (stored as XMP metadata in the dc:description field; see Section 3 for details) |
+| Description     | User-supplied text describing a photo (stored as XMP metadata in the dc:description field; see Section 3 for details) |
 | Object Key  | Storage path (Dropbox) or S3 object key                           |
 | LRU         | Least Recently Used cache for thumbnails                          |
 
 ## 11. Example Usage
 ### Get photo metadata
 Request: `GET /photos/1`
-Response: `{ "id": 1, "object_key": "photos/foo.jpg", "caption": "A dog" }`
+Response: `{ "id": 1, "object_key": "photos/foo.jpg", "description": "A dog" }`
 
-### Update caption
-Request: `PATCH /photos/1/caption` with `{ "caption": "A better caption" }`
-Response: `{ "id": 1, "caption": "A better caption" }`
+### Update description
+Request: `PATCH /photos/1/description` with `{ "description": "A better description" }`
+Response: `{ "id": 1, "description": "A better description" }`
 
 ### Error response
 Response: `{ "detail": "Photo not found" }` (404)
@@ -122,6 +124,6 @@ Response: `{ "detail": "Photo not found" }` (404)
 
 ## AI Guidance
 - When generating or reviewing code, you MUST check which backend is in use and apply the correct metadata storage mechanism.
-- For all backends (Dropbox, S3, filesystem), all caption CRUD MUST use XMP metadata in the dc:description field of the image file.
+- For all backends (Dropbox, S3, filesystem), all description CRUD MUST use XMP metadata in the dc:description field of the image file.
 - You MUST NOT assume S3/filesystem backends exist unless explicitly enabled.
 - All endpoint behaviors, error codes, and data model fields MUST match this spec.
