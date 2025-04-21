@@ -3,6 +3,7 @@ services:
     build:
       context: ../Captioner-backend
     environment:
+      STORAGE_BACKEND: "${STORAGE_BACKEND}"
       BACKEND_PASSWORD: "${BACKEND_PASSWORD}"
       DROPBOX_APP_KEY: "${DROPBOX_APP_KEY}"  # no default, fail if unset
       DROPBOX_APP_SECRET: "${DROPBOX_APP_SECRET}"
