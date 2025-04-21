@@ -1,101 +1,81 @@
-# 1. Captioner – Project Spec (LLM-Optimized, Tabular)
+# Captioner Project Specification (LLM-Optimized)
 
-**Spec Version:** 1.2.1  
-**Last Updated:** 2025-04-20
+**Spec Version:** 2.0.0
+**Last Updated:** 2025-04-21
+
+**Intended Audience:** Large Language Model (LLM) AIs, code generation agents, and human developers. Primary purpose: unambiguous, machine-readable reference for automated reasoning and implementation.
 
 ---
 
-**Changelog 1.2.1 (2025-04-20):**
-- Dropbox is now the only required storage backend for MVP. S3 and filesystem storage are post-MVP features and may never be implemented. All references to S3 and filesystem as MVP requirements have been removed or clarified.
+## RFC 2119 Terminology
+This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt). These terms are to be interpreted as follows:
+- **MUST**: This requirement is absolute.
+- **SHOULD**: There may exist valid reasons in particular circumstances to ignore a particular item, but the full implications must be understood and carefully weighed before choosing a different course.
+- **MAY**: This item is truly optional.
 
-**Changelog 1.2.0 (2025-04-20):**
-- Backend now implements JWT-based authentication for login and protected endpoints.
-- /login returns a JWT access token on success.
-- All protected endpoints require a valid bearer JWT.
-- JWT_SECRET_KEY is required in the environment and enforced at startup.
-- Full TDD, type, and lint coverage for authentication code.
+---
 
-**Changelog 1.1.0 (2025-04-19):**
-- DropboxStorage now uses OAuth 2.0 with refresh token flow for authentication.
-- Static DROPBOX_TOKEN is deprecated for runtime use; backend now requires DROPBOX_APP_KEY, DROPBOX_APP_SECRET, and DROPBOX_REFRESH_TOKEN.
-- Backend dynamically obtains short-lived access tokens using the refresh token; access tokens are never stored on disk.
-- Spec and config updated to reflect new Dropbox authentication model.
+## 1. Purpose
+- Captioner is a web application for viewing and captioning photos.
+- The backend MUST store images ("blobs") and associated metadata ("captions").
+- The storage mechanism for captions is backend-dependent (see Section 3) and MUST be implemented according to the backend in use.
 
-**Changelog 1.0.4 (2025-04-19):**
-- DropboxStorage supports pagination for all JPEG/PNG images (recursive, unlimited count)
-- Filtering for JPEG/PNG is done client-side (Dropbox API does not support extension filtering)
-- All DropboxStorage error paths (missing token, API errors, pagination errors) are fully tested and covered
-- PhotoStorage ABC methods now explicitly raise NotImplementedError
-- Test coverage is >95% and enforced in CI
-- Pre-commit hooks (Ruff, Pyright, coverage) are enforced
-- Conventional Commits and git commit message newline rule added to project rules
+## 2. MVP Scope
+- Only the Dropbox backend is REQUIRED for MVP.
+- S3 and filesystem backends are post-MVP and MAY never be implemented.
+- All references to S3/filesystem in this document are for extensibility/future-proofing only.
 
+## 3. Storage Abstraction
+- The backend MUST expose a storage abstraction with the following interface:
+  - `list_photos() -> list[int]`: MUST list all available photo object IDs
+  - `get_photo(photo_id: int) -> Photo`: MUST retrieve a specific photo (by ID or hash), including caption
+  - `set_caption(photo_id: int, caption: str) -> Photo`: MUST update a photo's caption
+- **Backend-specific behavior:**
+  - **Dropbox backend:**
+    - Blobs MUST be stored in Dropbox
+    - Captions MUST be stored in Dropbox file properties (no DB required)
+  - **S3 backend (future):**
+    - Blobs MUST be stored in S3
+    - Captions MUST be stored in SQLite DB or equivalent metadata store
+  - **Filesystem backend (future):**
+    - Blobs MUST be stored in local filesystem
+    - Captions MUST be stored in SQLite DB or equivalent metadata store
+- The API and abstraction MUST be unified; implementation MAY vary by backend.
 
-## 2. Purpose
-Private web app for viewing and captioning photos. FastAPI backend, Next.js frontend, SQLite DB, local image storage.
-
-## 3. Architecture
-- **Frontend:** Next.js 14 (TypeScript), Tailwind v4, shadcn/ui
-- **Backend:** FastAPI (Python 3), SQLite, SQLAlchemy ORM
-- **Image Storage:** Dropbox via HTTP API (OAuth 2.0 refresh token flow) is the only required backend for MVP. S3 and filesystem backends are post-MVP and may never be implemented.
-- **Supported Formats:** JPEG, PNG, WEBP (others rejected)
-- **Testing:** Pytest (backend), Jest/React Testing Library, Playwright (frontend)
-- **OS:** macOS, Linux
-
-## 4. Backend Photo Storage Abstraction
-- The backend implements a photo storage abstraction layer with two core functions:
-    - `list_photos`: List all available photo objects (IDs, metadata, etc.).
-    - `get_photo`: Retrieve a specific photo (by ID or hash).
-- The storage backend for MVP is Dropbox only. S3 and filesystem backends are post-MVP features and may never be implemented.
-    - **Dropbox** (required for MVP): Uses Dropbox HTTP API for photo storage/retrieval.
-        - Authenticates via OAuth 2.0: requires `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and `DROPBOX_REFRESH_TOKEN`.
-        - Backend dynamically obtains short-lived access tokens using the refresh token and app credentials.
-        - Static `DROPBOX_TOKEN` is no longer used at runtime (may be present for legacy/manual testing only).
-        - Access tokens are stored in memory only and never written to disk.
-    - **Filesystem** and **Amazon S3**: Post-MVP features (not implemented for MVP, may never be implemented).
-- The abstraction allows for easy switching or extension to new storage providers in the future.
-- All implementations must conform to the same interface and support the required operations efficiently.
-
-## 5. Backend API Endpoints
-
+## 4. API Endpoints
 | Method | Path                        | Purpose                  | Request Example                  | Response Example                |
 |--------|-----------------------------|--------------------------|----------------------------------|---------------------------------|
-| POST   | /login                      | Authenticate user        | `{ "password": "..." }`         | `{ "access_token": "<jwt>", "token_type": "bearer" }`           |
+| POST   | /login                      | Authenticate user        | `{ "password": "hunter2" }`         | `{ "access_token": "<jwt>", "token_type": "bearer" }`           |
 | GET    | /photos?limit=100&offset=0  | List photo IDs           |                                  | `{ "photo_ids": [1,2,3] }`      |
 | GET    | /photos/{id}                | Get photo metadata       |                                  | `{ "id": 1, ... }`              |
 | PATCH  | /photos/{id}/caption        | Update photo caption     | `{ "caption": "Nice" }`         | `{ "id": 1, "caption": "Nice"}` |
 | GET    | /photos/{id}/image          | Get image file           |                                  | (binary image)                  |
 | POST   | /rescan                     | Discover and sync photos from storage |                                  | `{ "status": "ok" }`            |
-| GET    | /photos/shuffled?limit=100  | Get shuffled photo IDs   |                                  | `{ "photo_ids": [3,1,2] }`      |
 
-All protected endpoints require `Authorization: Bearer <token>` in the header.
+- All protected endpoints MUST require `Authorization: Bearer <token>` in the header.
+- The `/photos/{id}` and `/photos/{id}/caption` endpoints MUST use the backend's metadata mechanism (Dropbox file properties for Dropbox, DB for S3/filesystem).
 
-### /rescan – Image Discovery Endpoint
+## 5. Data Model
+| Field      | Type     | Description                                           |
+|------------|----------|-------------------------------------------------------|
+| id         | integer  | Unique photo ID (DB PK, auto-increment)               |
+| object_key | string   | Storage path or object key (Dropbox path or S3 key)   |
+| caption    | string   | User-supplied caption (see Section 3 for storage)     |
 
-- **Purpose:** Walks the configured photo store (Dropbox, S3, or filesystem) and ensures every image file has a corresponding record in the database. If a photo exists in storage but not in the database, a new record is created. No records are deleted or modified for missing files.
-- **When to use:** Call this endpoint after adding images directly to storage (e.g., Dropbox folder, S3 bucket, or local directory) outside of the app.
-- **Request:** `POST /rescan`
-- **Response:** `{ "status": "ok", "num_new_photos": 3 }`
-  (where `num_new_photos` is the number of new records created)
-- **Notes:**
-  - Only supported image formats (JPEG, PNG, WEBP) are discovered.
-  - Does not delete or modify existing database records for missing files.
-  - May be a long-running operation for large stores.
+## 6. Configuration (Environment Variables)
+| Variable                | Purpose                        | Type    | Required | Example Value           |
+|-------------------------|--------------------------------|---------|----------|------------------------|
+| PASSWORD                | Backend login password         | string  | Yes      | hunter2                |
+| STORAGE_BACKEND         | Photo storage backend          | string  | No       | dropbox                |
+| DROPBOX_APP_KEY         | Dropbox API app key            | string  | Yes*     | your_app_key           |
+| DROPBOX_APP_SECRET      | Dropbox API app secret         | string  | Yes*     | your_app_secret        |
+| DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token| string  | Yes*     | your_refresh_token     |
+| JWT_SECRET_KEY          | JWT signing key                | string  | Yes      | (long random string)   |
+| DATABASE_URL            | DB connection string           | string  | No       | sqlite:///photos.db    |
 
-**Parameter Constraints:**
-- `limit` (integer): Default 100, min 1, max 1000
-- `offset` (integer): Default 0, min 0
-
-## 6. Data Model
-
-| Field     | Type     | Constraints                 | Description                   |
-|-----------|----------|----------------------------|-------------------------------|
-| id         | integer  | PK, auto-increment         | Unique photo ID               |
-| object_key| string   | unicode, unique, indexed   | Storage path or S3 object key |
-| caption   | text     | nullable                   | User-supplied caption         |
+*Required for Dropbox backend only.
 
 ## 7. Error Codes
-
 | Status | Meaning         | Example Scenario                                |
 |--------|----------------|-------------------------------------------------|
 | 400    | Bad Request    | Malformed request, invalid parameters           |
@@ -106,113 +86,43 @@ All protected endpoints require `Authorization: Bearer <token>` in the header.
 | 422    | Unprocessable  | Semantically invalid (e.g., bad caption)        |
 | 500    | Server Error   | Unexpected backend/server error                 |
 
-## 8. Frontend Features
+## 8. Development Practices
+- Test-driven development (TDD) MUST be followed for all new features.
+- All code MUST pass type checking (Pyright) and linting (Ruff) before merging.
+- All secrets/configuration MUST be provided via environment variables (never hardcoded).
+- CI/CD MUST enforce tests, linting, and type checks.
+- Code MUST be concise, maintainable, and PEP 8/257 compliant.
 
-- Single-photo random UX; displays one random photo at a time.
-- Editable caption field below image; saves edits in real time (debounced).
-- No gallery/grid view.
-- No rescan button in UI.
-- Responsive design; works on all modern browsers.
-- Basic accessibility: alt text is caption > filename > blank.
-- No upload/delete UI; images are identified by database id and object_key.
+## 9. Roadmap / Extensibility
+- S3 and filesystem backends MAY be implemented in the future.
+- S3/filesystem backends MUST use a DB for captions/metadata.
+- The API/abstraction MUST remain unified regardless of backend.
 
-## 9. Project Structure
+## 10. Glossary
+| Term        | Definition                                                        |
+|-------------|-------------------------------------------------------------------|
+| Photo       | An image record (blob + metadata)                                 |
+| Caption     | User-supplied text describing a photo (see Section 3 for storage) |
+| Object Key  | Storage path (Dropbox) or S3 object key                           |
+| LRU         | Least Recently Used cache for thumbnails                          |
 
-- `/backend/app/` – FastAPI app and models
-- `/backend/images/` – Original images
-- `/backend/thumbnails/` – Cached thumbnails
-- `/backend/photos.db` – SQLite database
-- `/backend/tests/` – Pytest tests
-- `/frontend/src/` – React source code
-- `/frontend/public/` – Static files
-- `/frontend/package.json` – Frontend dependencies
-
-## 10. Configuration & Environment Variables
-
-| Variable                | Purpose                        | Type    | Required | Example Value           |
-|-------------------------|--------------------------------|---------|----------|------------------------|
-| PASSWORD                | Backend login password         | string  | Yes      | hunter2                |
-| THUMBNAIL_CACHE_SIZE_MB | LRU thumbnail cache size (MB)  | int     | No       | 128                    |
-| FRONTEND_API_KEY        | Shared secret for API          | string  | No       | abc123                 |
-| DATABASE_URL            | DB connection string           | string  | No       | sqlite:///photos.db    |
-| STORAGE_BACKEND         | Photo storage backend (dropbox only for MVP)   | string  | No       | dropbox                |
-| DROPBOX_APP_KEY         | Dropbox API app key (OAuth 2.0)                | string  | Yes      | your_app_key           |
-| DROPBOX_APP_SECRET      | Dropbox API app secret (OAuth 2.0)             | string  | Yes      | your_app_secret        |
-| DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token                | string  | Yes      | your_refresh_token     |
-| DROPBOX_TOKEN           | (Deprecated) Access token for Dropbox API      | string  | No       |                        |
-| S3_BUCKET               | AWS S3 bucket name (post-MVP only)             | string  | No       |                        |
-| AWS_ACCESS_KEY_ID       | AWS access key ID for S3 authentication (post-MVP only) | string  | No       |                        |
-| AWS_SECRET_ACCESS_KEY   | AWS secret access key for S3 authentication (post-MVP only) | string  | No       |                        |
-| JWT_SECRET_KEY          | Secret key for signing/verifying JWT tokens         | string  | Yes      | (long random string)         |
-
-*Required for Dropbox backend (the only MVP backend). S3 and filesystem are post-MVP only.
-
-- Dropbox backend uses OAuth 2.0: the backend exchanges the refresh token, app key, and app secret for a short-lived access token at runtime. Access tokens are never stored on disk or in the environment file.
-- All configuration via environment variables.
-- Local: use `.env` (not in git); reference with `docker-compose` (`env_file:`) or `docker run --env-file`.
-- Never hardcode secrets in Dockerfiles; inject at runtime.
-- Production: use Docker secrets or cloud secret manager.
-- Env vars loaded at container start, not build time.
-
-## Authentication Model
-
-- Users authenticate via POST /login with the backend password.
-- On success, the backend returns a JWT access token.
-- All protected endpoints require the token in the Authorization header as a Bearer token.
-- The JWT is signed with JWT_SECRET_KEY, which must be set in the environment.
-- Tokens are validated on every protected request.
-
-## 11. Development Practices
-
-- Test-driven development (TDD) strictly followed.
-- All new features require corresponding tests before code is written.
-- Tests must pass before code is considered complete.
-- Static analysis (Pyright) and style (Ruff) enforced via pre-commit hooks and CI.
-- Continuous Integration (CI) with GitHub Actions for both frontend and backend.
-- Tests ensure DB/filesystem isolation and clean up after themselves.
-- Code is concise, maintainable, and written with skepticism.
-
-## 12. Known Gaps / TODOs (Post-MVP)
-
-- Search functionality (by caption, filename, or metadata)
-- ML-based auto-captioning or caption suggestions
-
-## 13. Non-Goals / Out of Scope
-
-- No user accounts or authentication beyond simple password
-- No image manipulation or editing
-- No gallery/grid view
-- No upload/delete UI in MVP
-
-## 14. Glossary
-
-| Term     | Definition                                          |
-|----------|-----------------------------------------------------|
-| Photo    | An image record in the database and filesystem      |
-| Caption  | User-supplied text describing a photo               |
-| Object Key | Unicode storage path (Dropbox) or S3 object key      |
-| LRU      | Least Recently Used cache for thumbnails            |
-
-## 15. Example API Usage
-
-### Get photo IDs
-
-Request: `GET /photos?limit=2&offset=0`
-
-Response: `{ "photo_ids": [1, 2] }`
-
+## 11. Example Usage
 ### Get photo metadata
-
 Request: `GET /photos/1`
-
 Response: `{ "id": 1, "object_key": "photos/foo.jpg", "caption": "A dog" }`
 
 ### Update caption
-
 Request: `PATCH /photos/1/caption` with `{ "caption": "A better caption" }`
-
 Response: `{ "id": 1, "caption": "A better caption" }`
 
 ### Error response
-
 Response: `{ "detail": "Photo not found" }` (404)
+
+---
+
+## AI Guidance
+- When generating or reviewing code, you MUST check which backend is in use and apply the correct metadata storage mechanism.
+- For Dropbox, all caption CRUD MUST use Dropbox file properties API.
+- For S3/filesystem, all caption CRUD MUST use the DB.
+- You MUST NOT assume S3/filesystem backends exist unless explicitly enabled.
+- All endpoint behaviors, error codes, and data model fields MUST match this spec.
