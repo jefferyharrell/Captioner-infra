@@ -64,6 +64,24 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 
 > **Note:** The GET `/photos/{id}` endpoint returns both photo data and all metadata fields as a single JSON object. Additional metadata fields MAY be supported in the future.
 
+## Photo Object Definition
+
+The `Photo` object represents an image record and its associated metadata. All API responses and storage abstraction methods referencing a `Photo` MUST conform to the following structure:
+
+```json
+{
+  "id": 1,
+  "object_key": "photos/foo.jpg",
+  "description": "A dog"
+}
+```
+
+- `id` (integer): Unique photo ID (database primary key, auto-increment).
+- `object_key` (string): Storage path or object key (Dropbox path or S3 key).
+- `description` (string): User-supplied description (stored in the database via the storage abstraction).
+
+> **Note:** Additional fields MAY be added to the `Photo` object in future, post-MVP versions. All clients and integrations SHOULD be prepared to ignore unknown fields.
+
 ## 6. Configuration (Environment Variables)
 | Variable                | Purpose                        | Type    | Required | Example Value           |
 |-------------------------|--------------------------------|---------|----------|------------------------|
@@ -113,7 +131,7 @@ Request: `GET /photos/1`
 Response: `{ "id": 1, "object_key": "photos/foo.jpg", "description": "A dog" }`
 
 ### Update description
-Request: `PATCH /photos/1/description` with `{ "description": "A better description" }`
+Request: `PATCH /photos/1/metadata` with `{ "description": "A better description" }`
 Response: `{ "id": 1, "description": "A better description" }`
 
 ### Error response
