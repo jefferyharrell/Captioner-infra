@@ -33,13 +33,13 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 - **Backend-specific behavior:**
   - **Dropbox backend:**
     - Blobs MUST be stored in Dropbox
-    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored in the database via the storage abstraction (using SQLite for MVP)
   - **S3 backend (future):**
     - Blobs MUST be stored in S3
-    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored in the database via the storage abstraction
   - **Filesystem backend (future):**
     - Blobs MUST be stored in local filesystem
-    - Descriptions MUST be stored as XMP metadata in the dc:description field of the image file (no DB required)
+    - Descriptions MUST be stored in the database via the storage abstraction
 - The API and abstraction MUST be unified; implementation MAY vary by backend.
 
 ## 4. API Endpoints
@@ -53,14 +53,14 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 | POST   | /rescan                     | Discover and sync photos from storage |                                  | `{ "status": "ok" }`            |
 
 - All protected endpoints MUST require `Authorization: Bearer <token>` in the header.
-- The `/photos/{id}` and `/photos/{id}/metadata` endpoints MUST use XMP metadata in the dc:description field of the image file for all backends.
+- The `/photos/{id}` and `/photos/{id}/metadata` endpoints MUST source and persist metadata via the storage abstraction (i.e., use the database).
 
 ## 5. Data Model
 | Field      | Type     | Description                                           |
 |------------|----------|-------------------------------------------------------|
 | id         | integer  | Unique photo ID (DB PK, auto-increment)               |
 | object_key | string   | Storage path or object key (Dropbox path or S3 key)   |
-| description    | string   | User-supplied description (stored as XMP metadata in the dc:description field; see Section 3)     |
+| description    | string   | User-supplied description (stored in the database via the storage abstraction; see Section 3)     |
 
 > **Note:** The GET `/photos/{id}` endpoint returns both photo data and all metadata fields as a single JSON object. Additional metadata fields MAY be supported in the future.
 
@@ -73,7 +73,7 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 | DROPBOX_APP_SECRET      | Dropbox API app secret         | string  | Yes*     | your_app_secret        |
 | DROPBOX_REFRESH_TOKEN   | Dropbox OAuth 2.0 refresh token| string  | Yes*     | your_refresh_token     |
 | JWT_SECRET_KEY          | JWT signing key                | string  | Yes      | (long random string)   |
-| DATABASE_URL            | DB connection string (future/optional use; not required for XMP-only backends) | string  | No       | sqlite:///photos.db    |
+| DATABASE_URL            | DB connection string for metadata storage (SQLite for MVP) | string  | Yes      | sqlite:///photos.db    |
 
 *Required for Dropbox backend only.
 
@@ -97,14 +97,13 @@ This specification uses the key words **MUST**, **MUST NOT**, **REQUIRED**, **SH
 
 ## 9. Roadmap / Extensibility
 - S3 and filesystem backends MAY be implemented in the future.
-- S3/filesystem backends MUST use XMP metadata in the dc:description field for descriptions/metadata.
-- The API/abstraction MUST remain unified regardless of backend.
+- S3 and filesystem backends MUST use the storage abstraction to persist metadata in the database.
 
 ## 10. Glossary
 | Term        | Definition                                                        |
 |-------------|-------------------------------------------------------------------|
 | Photo       | An image record (blob + metadata)                                 |
-| Description     | User-supplied text describing a photo (stored as XMP metadata in the dc:description field; see Section 3 for details) |
+| Description     | User-supplied text describing a photo (stored in the database via the storage abstraction; see Section 3) |
 | Object Key  | Storage path (Dropbox) or S3 object key                           |
 | LRU         | Least Recently Used cache for thumbnails                          |
 
@@ -124,6 +123,6 @@ Response: `{ "detail": "Photo not found" }` (404)
 
 ## AI Guidance
 - When generating or reviewing code, you MUST check which backend is in use and apply the correct metadata storage mechanism.
-- For all backends (Dropbox, S3, filesystem), all description CRUD MUST use XMP metadata in the dc:description field of the image file.
+- For all backends (Dropbox, S3, filesystem), all description CRUD MUST use the storage abstraction to persist metadata in the database.
 - You MUST NOT assume S3/filesystem backends exist unless explicitly enabled.
 - All endpoint behaviors, error codes, and data model fields MUST match this spec.
